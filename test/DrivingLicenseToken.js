@@ -25,11 +25,14 @@ describe("DrivingLicenseToken", function () {
         const { drivingLicenseTokenContract, owner, receiver, tokenId } =
           await setup();
 
-        expect(
+        await expect(
           drivingLicenseTokenContract
             .connect(owner)
             .transferFrom(owner.address, receiver.address, tokenId)
-        ).to.be.revertedWith(/reverted with custom error \'ErrLocked\(\)\'/);
+        ).to.be.revertedWithCustomError(
+          drivingLicenseTokenContract,
+          "ErrLocked"
+        );
 
         expect(
           await drivingLicenseTokenContract
@@ -40,7 +43,7 @@ describe("DrivingLicenseToken", function () {
     });
 
     describe("when the issuer tries to transfer the token", () => {
-      it("fails to transfer the token because it's locked", async () => {
+      it("fails to transfer the token because it's not his token", async () => {
         const {
           drivingLicenseTokenContract,
           issuer,
@@ -49,11 +52,11 @@ describe("DrivingLicenseToken", function () {
           tokenId,
         } = await setup();
 
-        expect(
+        await expect(
           drivingLicenseTokenContract
             .connect(issuer)
             .transferFrom(owner.address, receiver.address, tokenId)
-        ).to.be.revertedWith(/reverted with custom error \'ErrLocked\(\)\'/);
+        ).to.be.revertedWith(/ERC721: caller is not token owner or approved/);
 
         expect(
           await drivingLicenseTokenContract
@@ -67,8 +70,8 @@ describe("DrivingLicenseToken", function () {
       it("fails because he's not allowed to", async () => {
         const { drivingLicenseTokenContract, owner, tokenId } = await setup();
 
-        expect(
-          drivingLicenseTokenContract.connect(owner).burn(tokenId)
+        await expect(
+          drivingLicenseTokenContract.connect(owner).burnDrivingLicense(tokenId)
         ).to.be.revertedWith(
           /The set burnAuth doesn't allow you to burn this token/
         );
@@ -82,12 +85,14 @@ describe("DrivingLicenseToken", function () {
     });
 
     describe("when the issuer tries to burn the token", () => {
-      it("fails because he's not allowed to", async () => {
-        const { drivingLicenseTokenContract, issuer, owner, tokenId } =
-          await setup();
+      it("success because he is allowed to", async () => {
+        const { drivingLicenseTokenContract, issuer, tokenId } = await setup();
 
-        expect(drivingLicenseTokenContract.connect(issuer).burn(tokenId)).not.to
-          .be.reverted;
+        await expect(
+          drivingLicenseTokenContract
+            .connect(issuer)
+            .burnDrivingLicense(tokenId)
+        ).not.to.be.reverted;
 
         expect(
           await drivingLicenseTokenContract
