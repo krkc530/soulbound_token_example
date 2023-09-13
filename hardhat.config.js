@@ -8,7 +8,7 @@ module.exports = {
     testrpc: {
       url: "http://localhost:8545",
       gas: 10000000,
-      gasPrice: 0,
+      // gasPrice: 0,
     },
   },
 };
